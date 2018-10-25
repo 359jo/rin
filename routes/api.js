@@ -7,7 +7,6 @@ const locationsAPI = require("../controllers/locations.controller");
 const projectsAPI = require("../controllers/projects.controller");
 
 //countries routes
-router.get("/addcountries", countriesAPI.addCountries);
 router.get("/countries", countriesAPI.getCountries);
 router.get("/countries/:id", countriesAPI.getCountry);
 
@@ -34,6 +33,7 @@ router.delete("/locations/:id", locationsAPI.deleteLocation);
 
 //projects routes
 router.get("/projects", projectsAPI.getProjects);
+router.get("/projects/locations", projectsAPI.getLocations);
 router.get("/projects/:id", projectsAPI.getProject);
 router.post("/projects", projectsAPI.addProject);
 router.put("/projects/:id", projectsAPI.updateProject);

@@ -170,44 +170,38 @@ export default class Landing extends Component {
       .state.index + 1}.jpg)`;
     document.querySelector(".down-rec").style.backgroundSize = "100%";
     document.querySelector(".down-rec").style.backgroundAttachment = "fixed";
-    document.querySelector(
-      ".effect-circle"
-    ).style.background = `url(imgs/backs${this.state.index + 1}.jpg)`;
-    document.querySelector(".effect-circle").style.backgroundSize = "100%";
-    document.querySelector(".effect-circle").style.backgroundAttachment =
-      "fixed";
   };
 
   translateShapes = () => {
     let random1 = Math.floor(Math.random() * 40);
     let random2 = Math.floor(Math.random() * 40);
-    if (random1 < 15) {
-      random1 += 20;
+    if (random1 < 20) {
+      random1 += 22;
     }
 
-    if (random2 < 15) {
+    if (random2 < 20) {
       random2 += 20;
     }
 
     document.querySelector(".up-rec").style.left = `${random1}%`;
     document.querySelector(".up-rec").style.width = `${random1}vw`;
+    document.querySelector(".up-rec-overlay").style.width = `${random1}vw`;
     document.querySelector(".up-rec-overlay").style.left = `${random1}%`;
     document.querySelector(".down-rec").style.right = `${random2}%`;
     document.querySelector(".down-rec").style.width = `${random2}vw`;
+    document.querySelector(".down-rec-overlay").style.width = `${random2}vw`;
     document.querySelector(".down-rec-overlay").style.right = `${random2}%`;
   };
 
   toggleOverlayColor = () => {
     document.querySelector(".up-rec-overlay").style.background =
-      document.querySelector(".up-rec-overlay").style.background ===
-      "linear-gradient(45deg,var(--color-2), var(--color-2))"
-        ? "linear-gradient(45deg, var(--color-4), var(--color-4))"
-        : "linear-gradient(45deg,var(--color-2), var(--color-2))";
+      document.querySelector(".up-rec-overlay").style.background === "cadetblue"
+        ? "khaki"
+        : "cadetblue";
     document.querySelector(".down-rec-overlay").style.background =
-      document.querySelector(".down-rec-overlay").style.background ===
-      "linear-gradient(45deg, var(--color-4), var(--color-4))"
-        ? "linear-gradient(45deg,var(--color-2), var(--color-2))"
-        : "linear-gradient(45deg, var(--color-4), var(--color-4))";
+      document.querySelector(".down-rec-overlay").style.background === "khaki"
+        ? "cadetblue"
+        : "khaki";
   };
 
   // navigate to route after 2 seconds
@@ -244,23 +238,7 @@ export default class Landing extends Component {
   render() {
     return (
       <div>
-        <div class="lines-container">
-          <div class="line" />
-          <div class="line" />
-          <div class="line" />
-          <div class="line" />
-          <div class="line" />
-          <div class="line" />
-          <div class="line" />
-          <div class="line" />
-          <div class="line" />
-        </div>
         <div className="landing fadeInFast">
-          <img
-            className="transparent-background"
-            src="https://images.unsplash.com/photo-1539023032992-ae77eacac916?ixlib=rb-0.3.5&ixid=eyJhcHBfaWQiOjEyMDd9&s=901c5c951abcee02a30229fda0248880&auto=format&fit=crop&w=2134&q=80"
-            alt=""
-          />
           <div className="partners">
             <img src="" alt="" className="partners-img" />
           </div>

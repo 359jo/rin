@@ -10,30 +10,40 @@
   top: 5%;
 }
 
-.project-info {
-  height: 100vh;
-  width: 100vw;
-  background: #eee;
-  position: absolute;
-  z-index: 25000;
-  font-family: var(--main-font);
-  text-align: center;
-  padding: 20%;
-  padding-top: 5%;
+.spectrum-container:hover .spectrum-popup {
   display: none;
-  animation-name: popup;
-  animation-duration: 1s;
-  animation-timing-function: cubic-bezier(0.075, 0.82, 0.165, 1);
 }
 
-.project-info img {
-  height: 300px;
+.land-map {
+  position: absolute;
+  z-index: 0;
 }
 
-.spectrum-container h2 {
+.spectrum-popup {
+  position: absolute;
+  color: white;
+  z-index: 100;
+  font-family: var(--main-font);
+  top: -25px;
+  background: var(--dark-transparent);
+  padding: 2px 20px;
+}
+
+.spectrum-popup::after {
+  content: "";
   position: absolute;
   z-index: 100;
-  font-size: 22px;
-  top: -30px;
-  color: #eee;
+  width: 0;
+  height: 0;
+  top: 30px;
+  left: 50%;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid var(--dark-transparent);
+}
+
+@media (max-width: 768px) {
+  .spectrum-popup {
+    display: none;
+  }
 }
