@@ -3,10 +3,20 @@ import "./Navbar.css";
 import { Link } from "react-router-dom";
 
 export default class Navbar extends Component {
-  state = {
-    counter: "10,034,623",
-    index: -1
-  };
+  constructor() {
+    super();
+    this.state = {
+      counter: "10,034,623",
+      index: -1
+    };
+  }
+
+  componentDidMount() {
+    this.startCounter();
+  }
+
+  //start counter
+  startCounter = () => {};
 
   onClickCircle = e => {
     const index = parseInt(e.target.getAttribute("index"), 10) - 1;
@@ -47,14 +57,14 @@ export default class Navbar extends Component {
   render() {
     return (
       <div>
-        <div className="navbar">
+        <div className="logo">
+          <Link className="navbar-link" to={"/"}>
+            <img src="/imgs/logo.png" alt="" className="logo-img" />
+          </Link>
+        </div>
+        <nav className="navbar">
           <div className="toggle-nav" onClick={this.toggleNavbar}>
             <i className="fas fa-times" />
-          </div>
-          <div className="logo">
-            <Link className="navbar-link" to={"/"}>
-              <img src="/imgs/old-logo.png" alt="" className="logo-img" />
-            </Link>
           </div>
 
           <ul className="navbar-middle">
@@ -112,7 +122,9 @@ export default class Navbar extends Component {
                   about
                   <ul className="nav-rec-menu">
                     <li>
-                      <Link to={"/about/who-we-are"}>who we are</Link>
+                      <Link to={"/about/who-we-are"} hash={"#about-routes"}>
+                        who we are
+                      </Link>
                     </li>
                     <li>
                       <Link to={"/about/strategy"}>our strategy</Link>
@@ -122,12 +134,6 @@ export default class Navbar extends Component {
                     </li>
                     <li>
                       <Link to={"/about/why-refugees"}>why refugees </Link>
-                    </li>
-                    <li>
-                      <Link to={"/about/team"}>our team </Link>
-                    </li>
-                    <li>
-                      <Link to={"/about/steering"}>steering committee</Link>
                     </li>
                   </ul>
                 </p>
@@ -153,7 +159,7 @@ export default class Navbar extends Component {
               </div>
             </Link> */}
           </ul>
-        </div>
+        </nav>
       </div>
     );
   }
