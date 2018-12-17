@@ -1,11 +1,11 @@
 import React, { Component } from "react";
 import "./About.css";
 import Strategy from "./Strategy/Strategy.component";
-import HowItWorksComponent from "./HowItWorks/HowItWorks.component";
 import WhyRefugeesComponent from "./WhyRefugees/WhyRefugees.component";
 import WhoWeAreComponent from "./WhoWeAre/WhoWeAre.component";
 import { Route } from "react-router-dom";
-import AboutIntro from "./AboutIntro/AboutIntro";
+import IconButton from "@material-ui/core/IconButton";
+import { Typography } from "@material-ui/core";
 
 export default class About extends Component {
   constructor() {
@@ -14,33 +14,25 @@ export default class About extends Component {
   }
 
   componentDidMount() {
-    document.body.style.overflowY = "auto";
     document.querySelector(".header").style.backgroundImage =
       'url("/imgs/backs4.jpg")';
-  }
-
-  componentWillUnmount() {
-    document.body.style.overflowY = "hidden";
   }
 
   // navigate to specifec route
   navigateTO = route => {
     this.props.history.push(route);
-    setTimeout(() => {
-      document.querySelector("#scroll-sign").scrollIntoView({
-        behavior: "smooth"
-      });
-    });
+    this.goDown();
   };
 
   scrollToTop = () => {
-    document.querySelector(".about").scrollIntoView({
+    document.querySelector(".header").scrollIntoView({
       behavior: "smooth"
     });
   };
 
   goDown = () => {
-    document.querySelector("#scroll-sign").scrollIntoView({
+    document.body.scrollBy({
+      top: window.innerHeight - document.body.scrollTop,
       behavior: "smooth"
     });
   };
@@ -64,77 +56,68 @@ export default class About extends Component {
           </div>
         </div>
 
-        <header>
-          <div className="header">
-            <h1 className="header-text color-1">About Us</h1>
-            <div className="line" />
+        <header className="header">
+          <Typography variant="h1" className="main-font upper color-1">
+            About Us
+          </Typography>
+          <div className="line" />
 
-            <ul className="about-nav">
-              <li>
-                <a
-                  onClick={() => {
-                    this.navigateTO("/about/strategy");
-                  }}
-                >
-                  <h5 className="upper">our strategy</h5>
-                  <i className="fas fa-street-view" />
-                </a>
-              </li>
+          <ul className="header-nav">
+            <li>
+              <IconButton
+                onClick={() => {
+                  this.navigateTO("/about/strategy");
+                }}
+              >
+                <i className="fas fa-street-view" />
+              </IconButton>
+              <h5 className="upper">our strategy</h5>
+            </li>
 
-              <li>
-                <a
-                  onClick={() => {
-                    this.navigateTO("/about/how-it-works");
-                  }}
-                >
-                  <h5 className="upper">how it works</h5>
-                  <i className="far fa-sun" />
-                </a>
-              </li>
+            <li>
+              <IconButton
+                onClick={() => {
+                  this.navigateTO("/about");
+                }}
+              >
+                <i className="fas fa-users" />
+              </IconButton>
+              <h5 className="upper">who we are</h5>
+            </li>
 
-              <li>
-                <a
-                  onClick={() => {
-                    this.navigateTO("/about/who-we-are");
-                  }}
-                >
-                  <h5 className="upper">who we are</h5>
-                  <i className="fas fa-users" />
-                </a>
-              </li>
-
-              <li>
-                <a
-                  onClick={() => {
-                    this.navigateTO("/about/why-refugees");
-                  }}
-                >
-                  <h5 className="upper">why refugees</h5>
-                  <i className="fab fa-accusoft" />
-                </a>
-              </li>
-            </ul>
-            <div className="go-down" onClick={this.goDown}>
-              <i className="fas fa-arrow-circle-down" />
-            </div>
+            <li>
+              <IconButton
+                onClick={() => {
+                  this.navigateTO("/about/why-refugees");
+                }}
+              >
+                <i className="fab fa-accusoft" />
+              </IconButton>
+              <h5 className="upper">why refugees</h5>
+            </li>
+          </ul>
+          <div className="go-down" onClick={this.goDown}>
+            <IconButton className="arrow-btn">
+              <i className="fas fa-arrow-down" />
+            </IconButton>
           </div>
         </header>
 
         <main className="container">
           <div id="scroll-sign" />
           <section id="about-routes">
-            <Route exact path="/about" component={AboutIntro} />
             <Route path="/about/strategy" component={Strategy} />
-            <Route path="/about/how-it-works" component={HowItWorksComponent} />
             <Route
               path="/about/why-refugees"
               component={WhyRefugeesComponent}
             />
-            <Route path="/about/who-we-are" component={WhoWeAreComponent} />
+            <Route path="/about" exact component={WhoWeAreComponent} />
           </section>
         </main>
-        <div className="back-to-top" onClick={this.scrollToTop}>
-          <i className="fas fa-arrow-circle-up" />
+        <div className="back-to-top" style={{ margin: "20px 0" }}>
+          <IconButton className="arrow-btn" onClick={this.scrollToTop}>
+            <i className="fas fa-arrow-up" />
+          </IconButton>
         </div>
       </div>
     );

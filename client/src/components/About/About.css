@@ -1,13 +1,26 @@
 .container {
-  margin: 20px;
-  margin-left: calc(15% + 100px);
+  padding: 20px;
   width: 70%;
+  display: block;
+  margin: 0 auto;
   -webkit-transition: all 1s ease;
   transition: all 1s ease;
 }
 
+.container:empty {
+  padding: 0;
+}
+.about-intro {
+  padding: 20px;
+}
+
 #about-routes {
   margin-top: 0;
+}
+
+#scroll-sign {
+  position: fixed;
+  top: 200vh;
 }
 
 .heading-theme-1 {
@@ -18,42 +31,44 @@
   text-transform: capitalize;
 }
 
-.about-nav {
-  display: flex;
+.header-nav {
+  margin-top: 50px;
+  display: block;
   list-style: none;
 }
 
-.about-nav h3 {
-  text-transform: uppercase;
-  color: var(--color-5);
-  font-family: var(--main-font);
-}
-
-.about-nav h5 {
+.header-nav h5 {
   text-transform: uppercase;
   color: var(--color-1);
   font-family: var(--main-font);
+  font-size: 1rem !important;
+  cursor: pointer;
 }
 
-.about-nav i {
+.header-nav i {
   color: var(--color-1);
-  text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
-  font-size: 50px;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+  font-size: 3rem !important;
+  text-align: center;
+  height: 4rem;
+  width: 4rem;
   text-align: center;
 }
-.about-nav li {
+
+.header-nav li {
   margin: 0 20px;
+  display: inline-block;
 }
 
-.about-nav li:hover i {
+.header-nav li:hover i {
   color: var(--color-2);
 }
 
-.about-nav li:hover h5 {
+.header-nav li:hover h5 {
   color: var(--color-2);
 }
 
-.about-nav li a {
+.header-nav li a {
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -69,29 +84,45 @@
   align-items: center;
 }
 
-.about-nav li a:hover {
+.header-nav li a:hover {
   -webkit-transform: scale(1) translateY(-5px);
   transform: scale(1) translateY(-5px);
+  -webkit-transition: cubic-bezier(0.165, 0.84, 0.44, 1);
   transition: cubic-bezier(0.165, 0.84, 0.44, 1);
+  -webkit-transition-duration: 0.2s;
   transition-duration: 0.2s;
 }
 
 .go-down,
 .back-to-top {
-  text-align: center;
   cursor: pointer;
+  width: 100%;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
 }
 
+.go-down button,
+.back-to-top button {
+  background: var(--color-2);
+  width: 50px;
+  height: 50px;
+}
+
+.go-down button:hover,
+.back-to-top button:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
 .go-down {
-  position: absolute;
-  bottom: 50px;
+  -webkit-transform: translateY(10vh);
+  transform: translateY(10vh);
 }
 
-.go-down i,
-.back-to-top i {
-  position: relative;
-  font-size: 50px;
-  color: var(--color-2);
+.arrow-btn i {
+  color: var(--color-1);
 }
 
 .read-more-popup {
@@ -167,45 +198,6 @@
   color: var(--color-1);
 }
 
-.heading-theme-2 {
-  color: var(--color-2);
-  font-family: var(--main-font);
-  margin: 10px;
-  margin-left: 0;
-  text-transform: uppercase;
-}
-
-.heading-theme-2 i {
-  font-size: 4rem;
-}
-
-.heading-theme-3 {
-  color: var(--color-5);
-  font-family: var(--main-font);
-  margin: 5px;
-  margin-left: 0;
-  font-weight: 500;
-}
-
-.heading-theme-4 {
-  color: var(--color-5);
-  font-family: var(--main-font);
-  margin: 10px;
-  margin-left: 0;
-}
-
-.team .p-theme-1 {
-  font-size: 1.5rem;
-}
-
-.p-theme-1 {
-  color: var(--color-5);
-  font-size: 1.5rem;
-  font-family: var(--main-font);
-  margin-bottom: 30px;
-  margin-left: 0;
-}
-
 .team-members {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -228,11 +220,19 @@
   text-transform: uppercase;
 }
 
+.about section {
+  margin: 0px;
+}
+
+.about section ul {
+  margin: 30px;
+}
+
 .about section ul li {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   color: var(--color-5);
   font-family: var(--main-font);
-  margin: 0px 0 70px 50px;
+  margin: 0px 0 20px 50px;
 }
 
 .key-strategy {
@@ -253,30 +253,18 @@
 
   .container {
     margin: 20px auto;
-    width: 90%;
-  }
-  .about-nav h5 {
-    font-size: 0.8rem;
-  }
-
-  .about-nav i {
-    font-size: 0.5rem;
-  }
-
-  .about-nav li {
-    margin: 10px;
-  }
-
-  .go-down i,
-  .back-to-top i {
-    font-size: 50px;
+    width: 95%;
   }
 
   .read-more-wrapper {
     width: 100%;
   }
-  .about-nav i {
-    font-size: 50px;
+
+  .header-nav i {
+    font-size: 8vw;
+  }
+  .header-nav h5 {
+    font-size: 3vw;
   }
 }
 

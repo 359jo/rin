@@ -1,101 +1,365 @@
 import React, { Component } from "react";
 import "./Data.css";
+import axios from "axios";
+import IconButton from "@material-ui/core/IconButton";
+import BarChart from "./Charts/BarChart/BarChart.component";
+import LineChart from "./Charts/LineChart/LineChart.component";
+import HorizontalBarChart from "./Charts/HorizontalBarChart/HorizontalBarChart.component";
+import CircularProgress from "@material-ui/core/CircularProgress";
+
+/*The structure of any chart data object is as the following:
+  somethingData: {
+        // labels: [],
+        // datasets: [{
+        //   label: "",
+        //   data: [],
+        //   backgroundColor: ''
+        // }]
+      }
+*/
 
 export default class Data extends Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
-      pageNumber: 0
+      asylumSeekersData: {},
+      resettlementData: {},
+      demographicsData: {},
+      asylumSeekersSelectedYear: 2012,
+      demographicsSelectedYear: 2012,
+      demographicsSelectedCountry: "Syrian Arab Republic",
+      isLoadingAsylumSeekersData: true,
+      isLoadingDmographicsData: true,
+      allCountries: [],
+      isAllCountriesRetrieved: false,
+      isVisible1: false
     };
   }
 
-  onPageDown = () => {
-    if (this.state.pageNumber < 3) {
-      this.setState(
-        {
-          pageNumber: this.state.pageNumber + 1
-        },
-        () => {
-          document.querySelector(".pages").style.top = `${-this.state
-            .pageNumber * 100}vh`;
+  componentWillMount() {
+    this.getAllCounries();
+    // this.getAsylumSeekersDataByYear();
+    // this.getResettlementData();
+    // this.getDemographicsData();
+  }
+
+  componentDidMount() {}
+
+  getAllCounries = () => {
+    axios
+      .get("https://restcountries.eu/rest/v2/all")
+      .then(res => {
+        res.data.forEach((oneData, i) => {
+          this.setState(
+            {
+              allCountries: [
+                ...this.state.allCountries,
+                { name: oneData.name, alpha3Code: oneData.alpha3Code }
+              ]
+            },
+            () => {
+              if (i === 249) {
+                this.setState({ isAllCountriesRetrieved: true });
+              }
+            }
+          );
+        });
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  };
+
+  scrollToTop = () => {
+    document.querySelector(".library").scrollIntoView({
+      behavior: "smooth"
+    });
+  };
+
+  goDown = () => {
+    document.querySelector(".container").scrollIntoView({
+      behavior: "smooth"
+    });
+  };
+
+  getAsylumSeekersDataByYear = e => {
+    const year =
+      e && e.target.value > -1
+        ? e.target.value
+        : this.state.asylumSeekersSelectedYear;
+    this.setState({
+      asylumSeekersSelectedYear: year,
+      isLoadingAsylumSeekersData: true
+    });
+
+    axios
+      .get(
+        `http://popdata.unhcr.org/api/stats/asylum_seekers.json?year=${year}&&country_of_origin=SYR`
+      )
+      .then(res => {
+        this.setState({ isLoadingAsylumSeekersData: false }, () => {
+          let labelsOfAsylumCountries = [];
+          let dataOfAppliedCount = [];
+          let dataOfAccepteddCount = [];
+          for (let i = 0; i < 50; i++) {
+            if (
+              !labelsOfAsylumCountries.includes(
+                res.data[i].country_of_asylum_en
+              ) &&
+              res.data[i].applied_during_year > 4
+            ) {
+              labelsOfAsylumCountries.push(res.data[i].country_of_asylum_en);
+              dataOfAppliedCount.push(res.data[i].applied_during_year);
+              dataOfAccepteddCount.push(
+                res.data[i].applied_during_year - res.data[i].rejected
+              );
+            }
+          }
+
+          let datasets = [{}, {}];
+          datasets[0].data = dataOfAppliedCount;
+          datasets[0].label = "Asylum Applications";
+          datasets[0].backgroundColor = "#8884d8";
+          datasets[1].data = dataOfAccepteddCount;
+          datasets[1].label = "Accepted Applications";
+          datasets[1].backgroundColor = "#82ca9d";
+          this.setState({
+            asylumSeekersData: {
+              labels: labelsOfAsylumCountries,
+              datasets: datasets
+            }
+          });
+        });
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  };
+
+  getResettlementData = () => {
+    const labels = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018];
+    const countriesOfAsylum = ["AUS", "CAN", "DEU", "GBR", "USA"];
+    const colors = [
+      "rgb(232, 51, 56)",
+      "rgb(141, 194, 111)",
+      "rgb(100, 179, 244)",
+      "rgb(100, 65, 165)",
+      "rgb(255, 144, 104)"
+    ];
+    let datasets = [];
+    for (let i = 0; i < countriesOfAsylum.length; i++) {
+      datasets.push({});
+      datasets[i].label = countriesOfAsylum[i];
+      datasets[i].backgroundColor = colors[i];
+      datasets[i].borderColor = colors[i];
+      datasets[i].fill = false;
+      datasets[i].data = [];
+
+      for (let j = 0; j < labels.length; j++) {
+        axios
+          .get(
+            `http://popdata.unhcr.org/api/stats/resettlement.json?year=${
+              labels[j]
+            }&country_of_asylum=${countriesOfAsylum[i]}`
+          )
+          .then(res => {
+            let totalValue = 0;
+            for (let r = 0; r < res.data.length; r++) {
+              if (typeof res.data[r].value === "number") {
+                totalValue += res.data[r].value;
+              }
+            }
+            datasets[i].data.push(totalValue);
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      }
+    }
+    this.setState({ resettlementData: { labels, datasets } });
+  };
+
+  findCountryAlpha3Code = countryName => {
+    if (this.state.isAllCountriesRetrieved) {
+      for (let i = 0; i < this.state.allCountries.length; i++) {
+        if (this.state.allCountries[i].name === countryName) {
+          return this.state.allCountries[i].alpha3Code;
         }
-      );
+      }
+    } else {
+      return "SYR";
     }
   };
 
-  onPageUp = () => {
-    if (this.state.pageNumber > 0) {
-      this.setState(
-        {
-          pageNumber: this.state.pageNumber - 1
-        },
-        () => {
-          document.querySelector(".pages").style.top = `${-this.state
-            .pageNumber * 100}vh`;
-        }
-      );
+  //This function is triggered in two events; either in select year event || in select country event
+  getDemographicsData = e => {
+    let year, country, alpha3Code;
+    //check if the event triggered by select year
+    if (e && Number(e.target.value) > -1) {
+      year = e.target.value;
+      country = this.state.demographicsSelectedCountry;
     }
+    //check if the event triggered by select country
+    else if (e && e.target.value) {
+      year = this.state.demographicsSelectedYear;
+      country = e.target.value;
+    }
+    //the initial values when the function is called in componentWillMount
+    else {
+      year = this.state.demographicsSelectedYear;
+      country = this.state.demographicsSelectedCountry;
+    }
+    this.setState({
+      demographicsSelectedYear: year,
+      demographicsSelectedCountry: country,
+      isLoadingDmographicsData: true
+    });
+    //find the alpha3Code of the country
+    alpha3Code = this.findCountryAlpha3Code(country);
+
+    axios
+      .get(
+        `http://popdata.unhcr.org/api/stats/demographics.json?year=${year}&country_of_residence=${alpha3Code}`
+      )
+      .then(res => {
+        let labels = [];
+        let femaleValueData = [];
+        let maleValueData = [];
+
+        this.setState({ isLoadingDmographicsData: false }, () => {
+          res.data.forEach(oneData => {
+            labels.push(oneData.location_name);
+            femaleValueData.push(oneData.female_total_value);
+            maleValueData.push(oneData.male_total_value);
+          });
+          let datasets = [{}, {}];
+          datasets[0].data = femaleValueData;
+          datasets[0].label = "Female Total Value";
+          datasets[0].backgroundColor = "pink";
+          datasets[1].data = maleValueData;
+          datasets[1].label = "Male Total Value";
+          datasets[1].backgroundColor = "#ADD8E6";
+
+          this.setState({ demographicsData: { labels, datasets } });
+        });
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  };
+
+  onChange = isVisible => {
+    console.log("Element is now %s", isVisible ? "visible" : "hidden");
+    this.setState({ isVisible1: isVisible });
   };
 
   render() {
+    let {
+      allCountries,
+      isLoadingAsylumSeekersData,
+      isLoadingDmographicsData,
+      demographicsSelectedYear,
+      demographicsSelectedCountry
+    } = this.state;
+
+    const years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017];
+    let allYears = years.map((year, i) => {
+      return (
+        <option value={year} key={i}>
+          {year}
+        </option>
+      );
+    });
+
+    let countries = allCountries.map((country, i) => {
+      return (
+        <option value={country.name} key={i}>
+          {country.name}
+        </option>
+      );
+    });
+
     return (
-      <div className="data fadeInFast">
-        <div className="pages">
-          <div className="page">
-            <img src="/imgs/data/chart1.png" className="data-img" alt="" />
-            <div className="data-text">
-              <p>
-                <b>INCREASED CAPITAL INVESTMENT</b> CAN MAKE A BIG DIFFERENCE
-                The RIN's impact investing and blended finance collaborative
-                will increase deal flow and help unlock private capital to spur
-                economic growth and stability among refugees and their
-                communities.
-              </p>
+      <div
+        className="data fadeInFast"
+        style={{
+          overflowY: "scroll"
+        }}
+      >
+        <header>
+          <div className="banner-full">
+            <h1>data</h1>
+            <div className="line" />
+            <h3>statistics proof that refugees are a great investment</h3>
+            <div className="go-down" onClick={this.goDown}>
+              <IconButton>
+                <i className="fas fa-arrow-down color-1" />
+              </IconButton>
             </div>
           </div>
-
-          <div className="page">
-            <img src="/imgs/data/chart4.png" className="data-img" alt="" />
-            <div className="data-text">
-              <p>
-                <b>Today</b>, nearly 70 million people have been forcibly
-                displaced worldwide, the highest number in human history. The
-                resulting dilemma is the defining social crisis of our time.
-              </p>
+        </header>
+        <div className="container">
+          <div className="asylum-seekers-chart">
+            <h3 className="chart-heading">
+              UNHCR Statistics of Asylum Seekers from Syria in{" "}
+              {this.state.asylumSeekersSelectedYear}
+            </h3>
+            <select onChange={this.getAsylumSeekersDataByYear}>
+              <option value={-1}>Select Year</option>
+              {allYears}
+            </select>
+            <div className="chart-preloader">
+              <CircularProgress
+                className="preloader"
+                size={"7vw"}
+                thickness={3}
+                style={{
+                  visibility: isLoadingAsylumSeekersData ? "visible" : "hidden"
+                }}
+              />
+              <BarChart
+                data={this.state.asylumSeekersData}
+                getAsylumSeekersDataByYear={this.getAsylumSeekersDataByYear}
+              />
             </div>
           </div>
-
-          <div className="page">
-            <img src="/imgs/data/chart7.png" className="data-img" alt="" />
-            <div className="data-text">
-              <p>
-                <b>The RIN</b> moves private capital from commitment to active
-                investment by sourcing, structuring, and supporting the
-                financing of projects and companies that benefit refugees and
-                host communities.
-              </p>
+          <div className="resettlement-chart">
+            <h3 className="chart-heading">
+              UNHCR Statistics of Resettlement (2010 - 2018)
+            </h3>
+            <LineChart
+              data={this.state.resettlementData}
+              getResettlementData={this.getResettlementData}
+            />
+          </div>
+          <div className="demographics-chart">
+            <h3 className="chart-heading">
+              UNHCR Statistics of Demographics in {demographicsSelectedCountry}{" "}
+              ({demographicsSelectedYear})
+            </h3>
+            <select onChange={this.getDemographicsData}>
+              <option value={-1}>Select Year</option>
+              {allYears}
+            </select>
+            <select onChange={this.getDemographicsData}>
+              <option value={-1}>Select country</option>
+              {countries}
+            </select>
+            <div className="chart-preloader">
+              <CircularProgress
+                className="preloader"
+                size={"7vw"}
+                thickness={3}
+                style={{
+                  visibility: isLoadingDmographicsData ? "visible" : "hidden"
+                }}
+              />
+              <HorizontalBarChart
+                data={this.state.demographicsData}
+                getDemographicsData={this.getDemographicsData}
+              />
             </div>
           </div>
-
-          <div className="page">
-            <img src="/imgs/data/chart9.png" alt="chart" className="data-img" />
-            <div className="data-text">
-              <p>
-                <b>Ultimately</b>, the RIN aims to bridge the gap between the
-                untapped entrepreneurial potential of refugees and capital
-                markets to spur economic growth, create jobs, and increase
-                socio-economic stability among displaced people.
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="arrows">
-          <a onClick={this.onPageUp}>
-            <i className="fas fa-arrow-left" />
-          </a>
-          <a onClick={this.onPageDown}>
-            <i className="fas fa-arrow-right" />
-          </a>
         </div>
       </div>
     );

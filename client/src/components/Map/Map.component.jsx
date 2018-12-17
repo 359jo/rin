@@ -10,56 +10,114 @@ import Axios from "axios";
 
 export default class Map extends Component {
   state = {
-    position: {
-      lat: 31.95,
-      lng: 35.99
+    center: [50, 0],
+    zoom: 3,
+    locadedProjects: [],
+    locations: [],
+    hoveredProject: {
+      Countries: [],
+      Sdgs: [],
+      Founders: [],
+      Investors: [],
+      contact: {},
+      sector: {},
+      refugeeInvestmentType: {}
     },
-    zoom: 0,
-    filterOptions: {},
-    projects: [],
     projectsInfo: [],
-    currentProject: {}
+    filterOptions: {
+      sectorId: 0,
+      investmentSize: ""
+    },
+    filterOn: false
   };
 
-  componentWillMount() {
+  componentDidMount() {
     this.fetchProjects();
   }
 
   // get all the projects and map it to the state;
   fetchProjects = () => {
-    const options = this.state.filterOptions;
-    for (const key in options) {
-      if (!options[key]) {
-        delete options[key];
-      }
-    }
-    Axios.get("/api/projects/locations", {
-      params: options
-    }).then(res => {
+    const locations = [];
+    Axios.get("/api/projectslocations", {
+      params: { ...this.state.filterOptions }
+    })
+      .then(res => {
+        console.log(this.state.filterOptions);
+
+        res.data.forEach(project => {
+          project.locations.forEach(location => {
+            location.sector = project.sector.name;
+            locations.push(location);
+          });
+        });
+        this.setState({ locations: locations });
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  };
+
+  _onChange = data => {
+    if (data.marginBounds.nw.lat >= 85 || data.marginBounds.se.lat <= -85) {
       this.setState({
-        projects: res.data
+        center: [this.state.center[0] + 0.001, this.state.center[1]]
+      });
+    }
+  };
+
+  handleSpectrumHover = sectorName => {
+    Axios.get("/api/sectors").then(res => {
+      const currentSector = res.data.filter(sector => {
+        return sector.name === sectorName;
+      });
+
+      const sectorId = currentSector[0].id;
+      this.setState(
+        {
+          filterOptions: { ...this.state.filterOptions, sectorId: sectorId }
+        },
+        () => {
+          this.fetchProjects();
+        }
+      );
+    });
+  };
+
+  getProject = (id, location) => {
+    this.state.locadedProjects.forEach(project => {
+      if (project.id === id) {
+        this.setState({
+          hoveredProject: project,
+          center: [location.lat, location.lng],
+          zoom: 6
+        });
+        return;
+      }
+    });
+
+    Axios.get("/api/projects/" + id).then(result => {
+      this.setState({
+        locadedProjects: [...this.state.locadedProjects, result.data[0]],
+        hoveredProject: result.data[0]
       });
     });
   };
 
-  // get the user filter input and call the filter by the options func
-  setFilterOptions = e => {
+  onOutHover = () => {
     this.setState({
-      filterOptions: {
-        ...this.state.filterOptions,
-        [e.target.name]: e.target.value
-      }
+      center: [50, 0],
+      zoom: 3
     });
   };
 
-  // filter projects by it own type
-  filterByType = type => {
+  handleFilterToggle = () => {
+    this.setState({ filterOn: !this.state.filterOn });
+  };
+
+  filterByGivenOptions = options => {
     this.setState(
       {
-        filterOptions: {
-          ...this.state.filterOptions,
-          type: type
-        }
+        filterOptions: { ...this.state.filterOptions, ...options }
       },
       () => {
         this.fetchProjects();
@@ -67,78 +125,49 @@ export default class Map extends Component {
     );
   };
 
-  // get one project info
-  getProject = id => {
-    let projectLoaded = false;
-    this.state.projectsInfo.forEach(one => {
-      if (one.id === id) {
-        projectLoaded = true;
-      }
-    });
-    if (projectLoaded) {
-      return this.setCurrentProject(id);
-    }
-    Axios.get(`/api/projects/${id}`).then(res => {
-      this.setState(
-        {
-          projectsInfo: [...this.state.projectsInfo, res.data[0]]
-        },
-        () => {
-          this.setCurrentProject(id);
-        }
-      );
-    });
-  };
-
-  // set the current hovered project in the state
-  setCurrentProject = id => {
-    this.state.projectsInfo.forEach(one => {
-      if (one.id === id) {
-        this.setState({
-          currentProject: one
-        });
-      }
-    });
-  };
-
   render() {
-    const dots = this.state.projects.map((project, key) => {
-      return (
-        <Dot
-          hover={this.getProject}
-          lng={project.lng}
-          lat={project.lat}
-          key={key}
-          project={project}
-          info={this.state.currentProject}
-        />
-      );
-    });
-
     return (
       <div
         style={{ height: "100vh", width: "100%" }}
-        className="map fadeInFast"
+        className="map fadeInSlow"
       >
+        <Spectrum handleMouseHover={this.handleSpectrumHover} />
+
         <Filter
-          filter={this.setFilterOptions}
-          fetchProjects={this.fetchProjects}
-          options={this.state.filterOptions}
+          filterProjects={this.filterByGivenOptions}
+          handleFilterToggle={this.handleFilterToggle}
+          shown={this.state.filterOn}
         />
-        <div className="spectrum-container">
-          <div className="spectrum-popup">
-            hover over different colors to filter by project type
-          </div>
-          <Spectrum className="" filterByType={this.filterByType} />
-        </div>
+        <button
+          button="true"
+          className="filter-btn"
+          onClick={this.handleFilterToggle}
+          style={{ display: this.state.filterOn ? "none" : "block" }}
+        >
+          filter
+        </button>
         <GoogleMapReact
           className="land-map"
           options={options}
           bootstrapURLKeys={{ key: mapApi }}
-          defaultCenter={this.state.position}
-          defaultZoom={this.state.zoom}
+          center={this.state.center}
+          zoom={this.state.zoom}
+          onChange={this._onChange}
+          handleMouseHover={this.handleSpectrumHover}
         >
-          {[dots]}
+          {this.state.locations.map((location, key) => {
+            return (
+              <Dot
+                lng={location.lng}
+                lat={location.lat}
+                key={key}
+                location={location}
+                project={this.state.hoveredProject}
+                onHover={this.getProject}
+                onOutHover={this.onOutHover}
+              />
+            );
+          })}
         </GoogleMapReact>
       </div>
     );

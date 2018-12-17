@@ -6,11 +6,9 @@
 # testing
 /coverage
 
-# production
-/build
 
 # map config
-/config
+map.config.js
 
 # misc
 .DS_Store

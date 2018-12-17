@@ -1,318 +1,381 @@
-const mysql = require("mysql");
-const axios = require("axios");
-const dbConfig = require("../db.config");
-const connection = mysql.createConnection(dbConfig);
-connection.connect(err => {
-  if (err) throw err;
-  console.log("connected");
-});
+const db = require("../../models/index");
+const Op = db.Sequelize.Op;
+const projectHelpers = require("../helpers/projects.helpers");
 
 module.exports.getProjects = (req, res) => {
-  connection.query("select * from projects", (err, result) => {
-    if (err) throw err;
-    res.send(result);
+  db.Project.findAll({
+    where: {
+      pending: false
+    },
+    include: [
+      {
+        model: db.Location,
+        as: "locations",
+        attributes: ["id", "lng", "lat", "ProjectId"]
+      },
+      { model: db.Story, as: "stories" },
+      { model: db.Contact, as: "contact" },
+      { model: db.Sector, as: "sector", attributes: ["id", "name"] },
+      {
+        model: db.RefugeeInvestmentType,
+        as: "refugeeInvestmentType",
+        attributes: ["id", "name", "img"]
+      },
+      { model: db.Investor, through: { attributes: [] }, as: "Investors" },
+      { model: db.Founder, through: { attributes: [] }, as: "Founders" },
+      { model: db.Country, through: { attributes: [] }, as: "Countries" },
+      { model: db.Sdg, through: { attributes: [] }, as: "Sdgs" }
+    ]
+  }).then(result => {
+    res.json(result);
   });
 };
 
-const getCountryIdByName = (countryName, cb) => {
-  let qry = `select id from countries where name="${countryName}"`;
-  connection.query(qry, (err, result) => {
-    if (err) throw err;
-    cb(result[0]["id"]);
+module.exports.getProjectsNames = (req, res) => {
+  db.Project.findAll({
+    where: {
+      pending: false
+    },
+    attributes: ["id", "name"]
+  }).then(result => {
+    res.json(result);
   });
 };
 
-// helper function to check if the admin enered the field and return the proper query
-const checkInputAndModifyQuery = (qry, input) => {
-  if (input.organizationName) {
-    qry += ` and p.organization_name like "%${input.organizationName}%"`;
-  }
+module.exports.getProjectsPage = (req, res) => {
+  const firstProjectIndex = Number(req.query.first);
+  const lastProjectIndex = Number(req.query.last);
 
-  if (input.projectName) {
-    qry += ` and p.title like "%${input.projectName}%"`;
-  }
-
-  if (input.capacity) {
-    qry += ` and p.capacity < ${input.capacity}`;
-  }
-
-  if (input.country) {
-    getCountryIdByName(input.country, id => {
-      qry += ` and l.country_id = ${id}`;
-    });
-  }
-
-  if (input.type) {
-    qry += ` and p.type = "${input.type}"`;
-  }
-
-  if (input.year) {
-    qry += ` and YEAR(p.start_date) = ${input.year}`;
-  }
-  return qry;
-};
-
-module.exports.getLocations = (req, res) => {
-  const filterOptions = req.query;
-
-  let qry =
-    "select p.id, l.lat, l.lng, p.type from projects p inner join locations l where p.location_id = l.id";
-
-  qry = checkInputAndModifyQuery(qry, filterOptions);
-  connection.query(qry, (err, result) => {
-    if (err) throw err;
-    res.send(result);
-  });
-};
-
-module.exports.getProjectCountry = (req, res) => {
-  let qry = `select c.name from countries c inner join locations l where c.id = l.country_id and l.id=${
-    req.params.id
-  };`;
-  connection.query(qry, (err, result) => {
-    if (err) throw err;
-    res.send(result);
+  db.Project.findAndCountAll({
+    where: {
+      pending: false
+    },
+    include: [
+      {
+        model: db.Location,
+        as: "locations",
+        attributes: ["id", "lng", "lat", "ProjectId"]
+      },
+      { model: db.Story, as: "stories" },
+      {
+        model: db.RefugeeInvestmentType,
+        as: "refugeeInvestmentType",
+        attributes: ["id", "name", "img"]
+      },
+      { model: db.Contact, as: "contact" },
+      { model: db.Sector, as: "sector", attributes: ["id", "name"] },
+      { model: db.Investor, through: { attributes: [] }, as: "Investors" },
+      { model: db.Founder, through: { attributes: [] }, as: "Founders" },
+      { model: db.Country, through: { attributes: [] }, as: "Countries" },
+      { model: db.Sdg, through: { attributes: [] }, as: "Sdgs" }
+    ],
+    offset: firstProjectIndex,
+    limit: lastProjectIndex - firstProjectIndex
+  }).then(result => {
+    res.json(result);
   });
 };
 
 module.exports.getProject = (req, res) => {
-  let qry = `select * from projects where id=${req.params.id}`;
-  connection.query(qry, (err, result) => {
-    if (err) throw err;
-    res.send(result);
-  });
-};
-
-addProjInExistLoc = data => {
-  let qry = `insert into projects(title, start_date, capacity, location_id, organization_name, img_url, type, project_description) values("${
-    data.title
-  }", '${data.start_date}', ${data.capacity}, ${data.location_id}, "${
-    data.organization_name
-  }", "${data.img_url}", "${data.type}", "${data.project_description}");`;
-  connection.query(qry, (err, result1) => {
-    if (err) throw err;
-  });
-};
-
-addProjInNewLoc = data => {
-  let qry = `insert into projects(title, start_date, capacity, location_id, organization_name, img_url, type, project_description) values("${
-    data.title
-  }", '${data.start_date}', ${data.capacity}, ${data.location_id}, "${
-    data.organization_name
-  }", "${data.img_url}", "${data.type}", "${data.project_description}");`;
-  connection.query(qry, (err, result) => {
-    if (err) throw err;
-  });
-};
-
-getNewLocId = req => {
-  let getNewLocationIDQry = `select id from locations where lat like ${
-    req.body.lat
-  } AND lng like ${req.body.lng};`;
-  let newID;
-  connection.query(getNewLocationIDQry, (err, result) => {
-    if (err) throw err;
-    newID = result[0].id;
-    let data = {
-      title: req.body.title,
-      start_date: req.body.start_date,
-      capacity: req.body.capacity,
-      location_id: newID,
-      organization_name: req.body.organization_name,
-      img_url: req.body.img_url,
-      type: req.body.type,
-      project_description: req.body.project_description
-    };
-    addProjInNewLoc(data);
-  });
-};
-
-addNewLoc = (req, countryId) => {
-  let locationData = {
-    country_id: countryId,
-    lng: req.body.lng,
-    lat: req.body.lat
-  };
-
-  let addNewLocationQry = `insert into locations(country_id, lng, lat) values(${
-    locationData.country_id
-  }, ${locationData.lng}, ${locationData.lat});`;
-  connection.query(addNewLocationQry, (err, result) => {
-    if (err) throw err;
-    getNewLocId(req);
-  });
-};
-
-getCountryId = req => {
-  let getCountryIDQry = `select id from countries where name="${
-    req.body.countryName
-  }"`;
-
-  connection.query(getCountryIDQry, (err, result) => {
-    if (err) throw err;
-
-    let countryId = result[0].id;
-    addNewLoc(req, countryId);
+  db.Project.findAll({
+    where: {
+      pending: false,
+      id: req.params.id
+    },
+    include: [
+      {
+        model: db.Location,
+        as: "locations",
+        attributes: ["id", "lng", "lat", "ProjectId"]
+      },
+      { model: db.Story, as: "stories" },
+      {
+        model: db.RefugeeInvestmentType,
+        as: "refugeeInvestmentType",
+        attributes: ["id", "name", "img"]
+      },
+      { model: db.Contact, as: "contact" },
+      { model: db.Sector, as: "sector", attributes: ["id", "name"] },
+      { model: db.Investor, through: { attributes: [] }, as: "Investors" },
+      { model: db.Founder, through: { attributes: [] }, as: "Founders" },
+      { model: db.Country, through: { attributes: [] }, as: "Countries" },
+      { model: db.Sdg, through: { attributes: [] }, as: "Sdgs" }
+    ]
+  }).then(result => {
+    res.json(result);
   });
 };
 
 module.exports.addProject = (req, res) => {
-  let getLocationIDQry = `select id from locations where lat like ${
-    req.body.lat
-  } AND lng like ${req.body.lng};`;
-  let id;
-  connection.query(getLocationIDQry, (err, result) => {
-    if (err) throw err;
+  let data = req.body;
 
-    let data = {
-      title: req.body.title,
-      start_date: req.body.start_date,
-      capacity: req.body.capacity,
-      organization_name: req.body.organization_name,
-      img_url: req.body.img_url,
-      type: req.body.type,
-      project_description: req.body.project_description
-    };
-    if (result[0]) {
-      //location exists
-      data.location_id = result[0].id;
-      //call addProjInExistLoc function
-      addProjInExistLoc(data);
-      res.send("project row inserted successfully");
-    } else {
-      // location doesn't exist => add location
-      //get country id from country name returned by map api by calling getCountryId
-      getCountryId(req);
-      //call addNewLoc
-      //call getNewLocId
-      //call addProjInNewLoc
-      res.send(
-        "project row inserted successfully and a new location row inserted"
-      );
-    }
+  db.Project.create(data).then(project => {
+    // create project locations records;
+    projectHelpers
+      .addLocations(data.locations, project.id)
+      .then(locationsAdded => {
+        // join project with countries;
+        projectHelpers
+          .joinProjectWithCountries(data.countries, project)
+          .then(() => {
+            // join project with sdgs
+            projectHelpers
+              .joinProjectWithSdgs(data.sdgs, project)
+              .then(() => {
+                res.send(201);
+              })
+              .catch(err => {
+                res.send(err);
+              });
+
+            // join project with investors
+            projectHelpers
+              .joinProjectWithInvestors(data.investors, project)
+              .then(() => {
+                res.send(201);
+              })
+              .catch(err => {
+                res.send(err);
+              });
+
+            // join project with founders
+            projectHelpers
+              .joinProjectWithFounders(data.founders, project)
+              .then(() => {
+                res.send(201);
+              })
+              .catch(err => {
+                res.send(err);
+              });
+          })
+          .catch(err => {
+            res.send(err);
+          });
+      })
+      .catch(err => {
+        res.send(err);
+      });
   });
 };
 
 module.exports.updateProject = (req, res) => {
-  let getLocationIDQry = `select id from locations where lat like ${
-    req.body.lat
-  } AND lng like ${req.body.lng};`;
-  let id;
-  connection.query(getLocationIDQry, (err, result) => {
-    if (err) throw err;
-
-    let data = {
-      title: req.body.title,
-      start_date: req.body.start_date,
-      capacity: req.body.capacity,
-      organization_name: req.body.organization_name,
-      img_url: req.body.img_url,
-      type: req.body.type,
-      project_description: req.body.project_description
-    };
-
-    if (result[0]) {
-      //location exists
-      data.location_id = result[0].id;
-
-      let qry = `UPDATE projects 
-                  SET title="${data.title}", start_date='${
-        data.start_date
-      }', capacity=${data.capacity}, organization_name="${
-        data.organization_name
-      }", img_url="${data.img_url}", type="${
-        data.type
-      }", project_description="${data.project_description}"
-                  WHERE id=${req.params.id};`;
-      connection.query(qry, (err, result) => {
-        if (err) throw err;
-        res.send("project row updated successfully");
-      });
-    } else {
-      // location doesn't exist => add location
-      //get country id from country name returned by map api
-      let getCountryIDQry = `select id from countries where name="${
-        req.body.countryName
-      }"`;
-      let countryId;
-      connection.query(getCountryIDQry, (err, result) => {
-        if (err) throw err;
-        //res.send("project row inserted successfully");
-        //console.log(result);
-        countryId = result[0].id;
-
-        let locationData = {
-          country_id: countryId,
-          lng: req.body.lng,
-          lat: req.body.lat
-        };
-
-        //add the new location
-        let addNewLocationQry = `insert into locations(country_id, lng, lat) values(${
-          locationData.country_id
-        }, ${locationData.lng}, ${locationData.lat});`;
-        connection.query(addNewLocationQry, (err, result) => {
-          if (err) throw err;
-
-          let getNewLocationIDQry = `select id from locations where lat like ${
-            req.body.lat
-          } AND lng like ${req.body.lng};`;
-          let newID;
-          connection.query(getNewLocationIDQry, (err, result) => {
-            if (err) throw err;
-            newID = result[0].id;
-            let data = {
-              title: req.body.title,
-              start_date: req.body.start_date,
-              capacity: req.body.capacity,
-              location_id: newID,
-              organization_name: req.body.organization_name,
-              img_url: req.body.img_url,
-              type: req.body.type,
-              project_description: req.body.project_description
-            };
-            let qry = `UPDATE projects 
-                  SET title="${data.title}", start_date='${
-              data.start_date
-            }', capacity=${data.capacity}, location_id=${
-              data.location_id
-            }, organization_name="${data.organization_name}", img_url="${
-              data.img_url
-            }", type="${data.type}", project_description="${
-              data.project_description
-            }"
-                  WHERE id=${req.params.id};`;
-            connection.query(qry, (err, result) => {
-              if (err) throw err;
-              res.send(
-                "project row updated successfully and a new location row inserted"
-              );
-            });
-          });
-        });
-      });
+  let data = req.body;
+  db.Project.findOne({
+    where: {
+      id: req.params.id
     }
+  }).then(project => {
+    // update project info
+    project.update(data).then(updated => {
+      // update project location
+      projectHelpers
+        .updateProjectLocations(project, data.locations)
+        .then(() => {
+          // update project investors
+          project.setInvestors([]).then(result => {
+            projectHelpers
+              .joinProjectWithInvestors(data.investors, project)
+              .then(result => {
+                res.send(result);
+              })
+              .catch(err => {
+                res.send(err);
+              });
+          });
+          // update project founders
+          project.setFounders([]).then(result => {
+            projectHelpers
+              .joinProjectWithFounders(data.founders, project)
+              .then(result => {
+                res.send(result);
+              })
+              .catch(err => {
+                res.send(err);
+              });
+          });
+          // update project countries
+          project.setCountries([]).then(result => {
+            projectHelpers
+              .joinProjectWithCountries(data.countries, project)
+              .then(result => {
+                res.send(result);
+              })
+              .catch(err => {
+                res.send(err);
+              });
+          });
+          // update project sdgs
+          project.setSdgs([]).then(result => {
+            projectHelpers
+              .joinProjectWithSdgs(data.sdgs, project)
+              .then(result => {
+                res.send(result);
+              })
+              .catch(err => {
+                res.send(err);
+              });
+          });
+        })
+        .catch(err => {
+          res.send(err);
+        });
+    });
   });
 };
 
-module.exports.deleteProject = (req, res) => {
-  let qry = `delete from projects where id=${req.params.id}`;
-  connection.query(qry, (err, result) => {
-    if (err) throw err;
-    res.send("project row has been deleted successfully");
-  });
+module.exports.acceptRequest = (req, res) => {
+  db.Project.update(
+    { pending: false },
+    {
+      where: {
+        id: req.params.id
+      }
+    }
+  )
+    .then(accepted => {
+      res.status(200).send(accepted);
+    })
+    .catch(err => {
+      res.send(err);
+    });
 };
 
-//addProject Algorithm
-/*
-         - user selects location
-         - map api returns the country name, lat, lng
-         - check locations table if it includes that location latlng which has been returned from map api
-            - get location id from locations where lat="lat" and lng="lng"
-         - if location id exists => add project immediately
-         - else
-           - get country id from country name returned from api
-           - add location to locations tale 
-           - get location id
-           - add project
-        */
+module.exports.deleteProjects = (req, res) => {
+  db.Location.destroy({ where: { ProjectId: req.params.id } })
+    .then(() => {
+      db.Story.destroy({
+        where: {
+          projectId: req.params.id
+        }
+      })
+        .then(deleted => {
+          db.Project.findOne({ where: { id: req.params.id } })
+            .then(project => {
+              project
+                .destroy()
+                .then(result => {
+                  db.Contact.destroy({
+                    where: {
+                      id: project.contactId
+                    }
+                  });
+                  res.sendStatus(200);
+                })
+                .catch(err => {
+                  res.status(400).send(err);
+                });
+            })
+            .catch(err => {
+              res.send(err);
+            });
+        })
+        .catch(err => {
+          res.send(err);
+        });
+    })
+    .catch(err => {
+      res.send(err);
+    });
+};
+
+module.exports.getProjectRequestsPage = (req, res) => {
+  db.Project.findAndCountAll({
+    where: {
+      pending: true
+    }
+  })
+    .then(result => {
+      res.json(result);
+    })
+    .catch(err => {
+      res.send(err);
+    });
+};
+
+module.exports.getProjectsLocations = (req, res) => {
+  let andQuery = [
+    {
+      pending: false
+    }
+  ];
+
+  let ProjectWhere = {
+    [Op.and]: andQuery
+  };
+
+  if (req.query.year) {
+    andQuery.push({
+      year: db.sequelize.where(
+        db.sequelize.fn("YEAR", db.sequelize.col("year")),
+        req.query.year
+      )
+    });
+  }
+
+  if (req.query.sectorId > 0) {
+    andQuery.push({
+      sectorId: req.query.sectorId
+    });
+  }
+
+  if (req.query.refugeeInvestmentTypeId > 0) {
+    andQuery.push({
+      refugeeInvestmentTypeId: req.query.refugeeInvestmentTypeId
+    });
+  }
+
+  let opOr = [];
+  if (req.query.sdgs) {
+    req.query.sdgs.forEach(sdg => {
+      db.Sdg.findOne({ where: { name: sdg } }).then(sdg => {
+        opOr.push({ sdgId: sdg.id });
+      });
+    });
+  }
+  let sdgsWhere = opOr.length ? { [Op.or]: opOr } : {};
+
+  db.Project.findAll({
+    where: ProjectWhere,
+    attributes: ["id"],
+    include: [
+      {
+        model: db.Location,
+        as: "locations",
+        attributes: ["id", "lng", "lat", "ProjectId"]
+      },
+      {
+        model: db.Sdg,
+        as: "Sdgs",
+        through: { attributes: [], where: sdgsWhere },
+        attributes: ["id", "name"]
+      },
+      {
+        model: db.Sector,
+        as: "sector",
+        attributes: ["id", "name"]
+      }
+    ]
+  })
+    .then(result => {
+      res.status(200).json(result);
+      console.log(result);
+    })
+    .catch(err => {
+      res.send(err);
+    });
+};
+
+module.exports.searchProjects = (req, res) => {
+  db.Project.findAll({
+    where: {
+      name: { [Op.like]: `%${req.query.value}%` }
+    },
+    limit: 10
+  })
+    .then(result => {
+      res.status(200).json(result);
+    })
+    .catch(err => {
+      res.status(404).json(err);
+    });
+};

@@ -1,84 +1,162 @@
-const mysql = require("mysql");
-const axios = require("axios");
-const dbConfig = require("../db.config");
-const connection = mysql.createConnection(dbConfig);
-connection.connect(err => {
-  if (err) throw err;
-  console.log("connected");
-});
+const storyValidator = require("../validators/story.validator");
+const db = require("../../models/index");
+const Op = db.Sequelize.Op;
 
 module.exports.getStories = (req, res) => {
-  connection.query("select * from stories", (err, result) => {
-    if (err) throw err;
-    const parsed = result.map(story => {
-      story.imgs = JSON.parse(story.imgs);
-      story.text = JSON.parse(story.text);
-      return story;
-    });
-    res.send(parsed);
+  db.Story.findAll({
+    include: [
+      {
+        model: db.Project,
+        as: "project",
+        include: [
+          { model: db.Location, as: "locations" },
+          { model: db.Contact, as: "contact" },
+          { model: db.Investor, through: { attributes: [] }, as: "Investors" },
+          { model: db.Founder, through: { attributes: [] }, as: "Founders" },
+          { model: db.Country, through: { attributes: [] }, as: "Countries" },
+          { model: db.Sdg, through: { attributes: [] }, as: "Sdgs" }
+        ]
+      }
+    ]
+  }).then(result => {
+    res.json(result);
+  });
+};
+
+module.exports.getStoriesPage = (req, res) => {
+  const firstStoryIndex = Number(req.query.first);
+  const lastStoryIndex = Number(req.query.last);
+
+  db.Story.findAndCountAll({
+    offset: firstStoryIndex,
+    limit: lastStoryIndex - firstStoryIndex
+  }).then(result => {
+    res.json(result);
   });
 };
 
 module.exports.getStory = (req, res) => {
-  let qry = `select * from stories where id=${req.params.id}`;
-  connection.query(qry, (err, result) => {
-    if (err) throw err;
-    const parsed = result.map(story => {
-      story.imgs = JSON.parse(story.imgs);
-      story.text = JSON.parse(story.text);
-      return story;
+  db.Story.findAll({
+    where: {
+      id: req.params.id
+    },
+    include: [
+      {
+        model: db.Project,
+        as: "project",
+        include: [
+          { model: db.Location, as: "locations" },
+          { model: db.Contact, as: "contact" },
+          { model: db.Investor, through: { attributes: [] }, as: "Investors" },
+          { model: db.Founder, through: { attributes: [] }, as: "Founders" },
+          { model: db.Country, through: { attributes: [] }, as: "Countries" },
+          { model: db.Sdg, through: { attributes: [] }, as: "Sdgs" }
+        ]
+      }
+    ]
+  })
+    .then(result => {
+      res.json(result);
+    })
+    .catch(err => {
+      res.send(err);
     });
-
-    res.send(parsed);
-  });
 };
 
 module.exports.addStory = (req, res) => {
-  let data = {
-    title: req.body.title,
-    pre_description: req.body.pre_description,
-    lens: req.body.lens,
-    text: JSON.stringify(req.body.text), //text is an array of strings
-    imgs: JSON.stringify(req.body.imgs) //imgs is an array of urls
-  };
-
-  let qry = `insert into stories(title, pre_description, lens, text, imgs) values("${data.title}", "${data.pre_description}", "${data.lens}", '${
-    data.text
-    }', '${data.imgs}');`;
-  connection.query(qry, (err, result) => {
-    if (err) throw err;
-    res.send("story row inserted successfully");
-  });
-};
-
-module.exports.uploadImage = (req, res) => {
-  res.send(req.file);
+  let data = req.body;
+  db.Story.create(data)
+    .then(result => {
+      res.status(201).json(result);
+    })
+    .catch(err => {
+      res.send(err);
+    });
 };
 
 module.exports.updateStory = (req, res) => {
-  let data = {
-    title: req.body.title,
-    pre_description: req.body.pre_description,
-    lens: req.body.lens,
-    text: JSON.stringify(req.body.text), //text is an array of strings
-    imgs: JSON.stringify(req.body.imgs) //imgs is an array of urls
-  };
-
-  let qry = `UPDATE stories
-                   SET title="${data.title}", pre_description="${data.pre_description}", lens="${data.lens}", text='${data.text}', imgs='${
-    data.imgs
-    }'
-                   WHERE id=${req.params.id};`;
-  connection.query(qry, (err, result) => {
-    if (err) throw err;
-    res.send("story row has been updated successfully");
-  });
+  let data = req.body;
+  db.Story.update(data, {
+    where: {
+      id: req.params.id
+    }
+  })
+    .then(result => {
+      res.json(result);
+    })
+    .catch(err => {
+      res.status(400).send(err);
+    });
 };
 
 module.exports.deleteStory = (req, res) => {
-  let qry = `delete from stories where id=${req.params.id}`;
-  connection.query(qry, (err, result) => {
-    if (err) throw err;
-    res.send("story row has been deleted successfully");
+  db.Story.destroy({
+    where: {
+      id: req.params.id
+    }
+  })
+    .then(result => {
+      res.json(result);
+    })
+    .catch(err => {
+      res.status(400).send(err);
+    });
+};
+
+module.exports.searchStories = (req, res) => {
+  db.Story.findAll({
+    where: {
+      buisness: {
+        [Op.like]: `%${req.query.value}%`
+      }
+    },
+    limit: 10
+  })
+    .then(result => {
+      res.status(200).json(result);
+    })
+    .catch(err => {
+      res.status(404).json(err);
+    });
+};
+
+module.exports.filterStories = (req, res) => {
+  const andQuery = [];
+
+  if (req.query.year) {
+    andQuery.push({
+      year: db.sequelize.where(
+        db.sequelize.fn("YEAR", db.sequelize.col("year")),
+        req.query.year
+      )
+    });
+  }
+
+  if (req.query.sector) {
+    andQuery.push({
+      sector: req.query.sector
+    });
+  }
+
+  if (req.query.refugeeInvestmentType) {
+    andQuery.push({
+      refugeeInvestmentType: req.query.refugeeInvestmentType
+    });
+  }
+  db.Project.findAll({
+    where: {
+      [Op.and]: andQuery
+    },
+    include: [{ model: db.Story, as: "stories" }],
+    limit: 10
+  }).then(result => {
+    const stories = [];
+    result.forEach(project => {
+      if (project.stories.length) {
+        stories.push(...project.stories);
+      }
+    });
+
+    res.status(200).json(stories);
   });
 };
