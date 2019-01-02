@@ -2,6 +2,9 @@ import React, { Component } from "react";
 import "./News.css";
 import IconButton from "@material-ui/core/IconButton";
 import Links from "./Links/Links.component";
+import Footer from "../Footer/Footer.component";
+import SocialLinks from "../Landing/socialLinks.component";
+import Typography from "@material-ui/core/Typography";
 
 export default class News extends Component {
   constructor() {
@@ -28,13 +31,15 @@ export default class News extends Component {
   render() {
     return (
       <div className="news fadeInFast">
+        <SocialLinks />
         <header>
           <div className="banner-full">
-            <h1>news</h1>
-            <div className="line" />
-            <h3>
+            <Typography variant="h1" className="hero-title upper color-2">
+              News
+            </Typography>
+            <Typography variant="h5" className="hero-subtitle color-1">
               RIN press and other latest resources around refugee investment
-            </h3>
+            </Typography>
             <div className="go-down" onClick={this.goDown}>
               <IconButton>
                 <i className="fas fa-arrow-down color-1" />
@@ -45,6 +50,7 @@ export default class News extends Component {
         <div className="container">
           <Links />
         </div>
+        <Footer />
       </div>
     );
   }

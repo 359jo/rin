@@ -6,6 +6,7 @@ import WhoWeAreComponent from "./WhoWeAre/WhoWeAre.component";
 import { Route } from "react-router-dom";
 import IconButton from "@material-ui/core/IconButton";
 import { Typography } from "@material-ui/core";
+import Footer from "../Footer/Footer.component";
 
 export default class About extends Component {
   constructor() {
@@ -57,11 +58,9 @@ export default class About extends Component {
         </div>
 
         <header className="header">
-          <Typography variant="h1" className="main-font upper color-1">
-            About Us
+          <Typography variant="h1" className="hero-title upper color-2">
+            About
           </Typography>
-          <div className="line" />
-
           <ul className="header-nav">
             <li>
               <IconButton
@@ -119,6 +118,7 @@ export default class About extends Component {
             <i className="fas fa-arrow-up" />
           </IconButton>
         </div>
+        <Footer />
       </div>
     );
   }

@@ -4,6 +4,9 @@ import Story from "./Story/Story.component";
 import Axios from "axios";
 import { Link } from "react-router-dom";
 import IconButton from "@material-ui/core/IconButton";
+import Footer from "../Footer/Footer.component";
+import SocialLinks from "../Landing/socialLinks.component";
+import { Typography } from "@material-ui/core";
 
 class Stories extends Component {
   constructor(props) {
@@ -44,35 +47,37 @@ class Stories extends Component {
       return <Story story={story} key={id} index={id} />;
     });
     return (
-      <div className="stories fadeInFast">
-        <header>
-          <div className="header">
-            <video src="/videos/camp.mp4" autoPlay muted loop />
-            <h1 className="header-text">Success Stories</h1>
-            <div className="line" />
-
-            <h3 className="header-subtitle">
-              Every-day stories proving that refugees are investable
-            </h3>
-            <div className="go-down" onClick={this.goDown}>
-              <IconButton onClick={this.goDown}>
-                <i className="fas fa-arrow-down color-1" />
-              </IconButton>
+      <React.Fragment>
+        <div className="stories fadeInFast">
+          <SocialLinks />
+          <header>
+            <div className="header">
+              <video src="/videos/camp.mp4" autoPlay muted loop />
+              <Typography variant="h1" className="hero-title upper color-2">Success Stories</Typography>
+              <Typography variant="h5" className="hero-subtitle color-1">
+                every-day stories proving that refugees are investable
+              </Typography>
+              <div className="go-down" onClick={this.goDown}>
+                <IconButton onClick={this.goDown}>
+                  <i className="fas fa-arrow-down color-1" />
+                </IconButton>
+              </div>
             </div>
+          </header>
+          <div id="scroll-sign" />
+          <div className="vertical-line" />
+          <div className="center-stories">
+            <img src="/imgs/old-logo.png" alt="" />
           </div>
-        </header>
-        <div id="scroll-sign" />
-        <div className="vertical-line" />
-        <div className="center-stories">
-          <img src="/imgs/old-logo.png" alt="" />
+          <div className="container" id="stories-list">
+            {storiesInfo}
+            <Link to={"/all-stories"}>
+              <button>Read More Stories</button>
+            </Link>
+          </div>
         </div>
-        <div className="container" id="stories-list">
-          {storiesInfo}
-          <Link to={"/all-stories"}>
-            <button>Read More Stories</button>
-          </Link>
-        </div>
-      </div>
+        <Footer />
+      </React.Fragment>
     );
   }
 }
