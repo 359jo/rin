@@ -122,14 +122,22 @@ section {
   padding: 10px 30px;
   color: var(--color-2);
   cursor: pointer;
+  margin: 20px auto;
 }
 
+.btn i {
+  margin: 0 10px;
+}
+
+.btn:hover {
+  background: var(--color-2);
+  color: var(--color-1);
+}
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-gap: 50px;
 }
-
 .upper {
   text-transform: uppercase;
 }
@@ -629,6 +637,11 @@ option:hover {
   justify-content: center;
 }
 
+.justify-content-between {
+  -webkit-box-pack: justify;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+}
 .bg-1 {
   background-color: var(--color-1);
 }
@@ -661,8 +674,15 @@ option:hover {
 .padding-20 {
   padding: 20px;
 }
+.padding-10 {
+  padding: 10px;
+}
 .margin-20 {
   margin: 20px;
+}
+
+.my-50 {
+  margin: 50px auto;
 }
 
 .start-icon {
@@ -710,6 +730,9 @@ option:hover {
   }
   .grid-5 {
     grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  }
+  .grid-6 {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
   }
 }
 @media (max-width: 1024px) {

@@ -7,6 +7,7 @@ import Typography from "@material-ui/core/Typography";
 import DataCharts from "./DataCharts/DataCharts.component";
 import Researches from "./Researches/Researches.component";
 import Footer from "../Footer/Footer.component";
+import SocialLinks from "../Landing/socialLinks.component";
 
 export default class Data extends Component {
   constructor(props) {
@@ -20,15 +21,16 @@ export default class Data extends Component {
     this.getSectionInfo("data");
   }
 
-  getSectionInfo = (sectionTitle) => {
-    axios.get(`/api/sectiontitle/${sectionTitle}`)
+  getSectionInfo = sectionTitle => {
+    axios
+      .get(`/api/sectiontitle/${sectionTitle}`)
       .then(result => {
         this.setState({ sectionInfo: result.data[0] });
       })
       .catch(err => {
         console.log(err);
       });
-  }
+  };
 
   goDown = () => {
     document.querySelector(".container").scrollIntoView({
@@ -55,13 +57,15 @@ export default class Data extends Component {
           overflowY: "scroll"
         }}
       >
+        <SocialLinks />
         <header>
           <div className="banner-full">
-            <Typography variant="h1" className="main-font upper color-2">
+            <Typography variant="h1" className="hero-title upper color-2">
               {sectionInfo.title}
             </Typography>
-            <div className="line" />
-            <h3>{sectionInfo.subtitle}</h3>
+            <Typography variant="h5" className="hero-subtitle color-1">
+              {sectionInfo.subtitle}
+            </Typography>
             <ul className="header-nav">
               <li>
                 <a
@@ -93,7 +97,11 @@ export default class Data extends Component {
           </div>
         </header>
         <div className="container">
-          <Route exact path="/data" render={(props) => <DataCharts {...props} body={sectionInfo.body} />} />
+          <Route
+            exact
+            path="/data"
+            render={props => <DataCharts {...props} body={sectionInfo.body} />}
+          />
           <Route path="/data/researches" component={Researches} />
         </div>
         <Footer />
