@@ -11,7 +11,8 @@ export default class Footer extends Component {
     added: false
   };
 
-  subscribeToNewsLetter = () => {
+  subscribeToNewsLetter = (e) => {
+    e.preventDefault()
     if (this.state.email.length < 5) {
       return;
     }
@@ -35,13 +36,13 @@ export default class Footer extends Component {
             <img src="/imgs/logo.png" className="footer-logo" alt="" />
             <Typography
               variant="body1"
-              className="footer-col-title capitalize text-center color-4"
+              className="footer-col-title capitalize text-center color-5"
             >
               Refugee investment network
             </Typography>
           </div>
           <div className="footer-col">
-            <Typography variant="h6" className="footer-col-title upper color-4">
+            <Typography variant="h6" className="footer-col-title upper color-5">
               Fast Links
             </Typography>
             <ul className="footer-contact-links">
@@ -86,7 +87,7 @@ export default class Footer extends Component {
             </ul>
           </div>
           <div className="footer-col">
-            <Typography variant="h6" className="footer-col-title upper color-4">
+            <Typography variant="h6" className="footer-col-title upper color-5">
               contact us
             </Typography>
             <ul className="footer-contact-links">
@@ -111,61 +112,62 @@ export default class Footer extends Component {
                 </a>
               </li>
             </ul>
-            <div className="my-50">
+          </div>
+          <div className="footer-col">
+            <div>
               <Typography
-                variant="body1"
-                className="color-3 capitalize"
-                style={{ display: "inline-block" }}
+                variant="h6"
+                className="footer-col-title upper color-5"
+                style={{ marginRight: 10 }}
               >
                 subscribe to our newsletter
               </Typography>
-              <TextField
-                style={{
-                  margin: "0",
-                  
-                }}
-                InputProps={{
-                  type: "email"
-                }}
-                onChange={this.handleChange}
-                type="email"
-                value={this.state.added ? "" : this.state.email}
-                placeholder={"your email..."}
-              />
-              <Button
-                style={{
-                  margin: "0 10px",
-                  height: "35px",
-                  borderRadius: "100px",
-                  background: "var(--color-2)"
-                }}
-                onClick={this.subscribeToNewsLetter}
-              >
-                <span style={{ display: !this.state.added ? "block" : "none" }}>
-                  {" "}
-                  Subscribe{" "}
-                </span>
-                <img
-                  alt=""
+              <form onSubmit={this.subscribeToNewsLetter}>
+                <TextField
                   style={{
-                    height: "30px",
-                    mixBlendMode: "multiply",
-                    display: this.state.added ? "block" : "none"
+                    marginTop: "20px"
                   }}
-                  src="/imgs/done.gif"
+                  InputProps={{
+                    type: "email"
+                  }}
+                  onChange={this.handleChange}
+                  type="email"
+                  pattern="/^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/"
+                  required
+                  value={this.state.added ? "" : this.state.email}
+                  placeholder={"your email..."}
                 />
-              </Button>
+                <Button
+                  style={{
+                    margin: "20px 10px",
+                    height: "35px",
+                    borderRadius: "100px",
+                    background: "var(--color-2)"
+                  }}
+                  type="submit"
+                >
+                  <span
+                    style={{ display: !this.state.added ? "block" : "none" }}
+                  >
+                    Subscribe
+                  </span>
+                  <i
+                    className="fas fa-check"
+                    style={{ display: this.state.added ? "block" : "none" }}
+                  />
+                </Button>
+              </form>
             </div>
           </div>
         </div>
         <div className="footer-bottom">
-          <Typography variant="overline" className="color-4">
-            Made With <i className="fas fa-heart" /> By Refugees Hands At{" "}
+          <Typography variant="overline" className="color-5">
+            Made With <i className="fas fa-heart" /> By Refugees Hands At
             <a href="" className="color-1">
               <strong>@359</strong>
             </a>
           </Typography>
-          <Typography variant="overline" className="color-4">
+          <Typography variant="overline" className="color-5">
             Copyright © {new Date().getFullYear()} Refugee Investment Network.
             All rights reserved.
           </Typography>
